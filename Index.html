@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Pokédex Prototype - Home Screen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --glow-color-1: rgba(0, 216, 255, 0.7);
+            --glow-color-2: #00D8FF;
+            --highlight-color-1: rgba(253, 95, 255, 0.6);
+            --highlight-color-2: #FD5FFF;
+        }
+
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+            color: #e0fbfc;
+            min-height: 100vh;
+        }
+
+        .glass-panel {
+            background: linear-gradient(145deg, rgba(34, 24, 75, 0.6), rgba(60, 30, 110, 0.5));
+            backdrop-filter: blur(12px);
+            border: 2px solid var(--glow-color-1);
+            border-radius: 2rem;
+            box-shadow: 0 0 25px var(--glow-color-1), inset 0 0 15px var(--glow-color-1);
+        }
+
+        .interactive-button {
+            background: linear-gradient(145deg, rgba(34, 24, 75, 0.8), rgba(60, 30, 110, 0.7));
+            border: 1px solid var(--highlight-color-1);
+            box-shadow: 0 0 8px var(--highlight-color-1), inset 0 0 5px var(--highlight-color-1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            color: #e0fbfc;
+            text-shadow: 0 0 5px var(--glow-color-2);
+        }
+        
+        .interactive-button:hover {
+            background: linear-gradient(145deg, rgba(50, 40, 100, 0.9), rgba(80, 50, 130, 0.8));
+            border-color: var(--highlight-color-2);
+            box-shadow: 0 0 15px var(--highlight-color-2), inset 0 0 8px var(--highlight-color-2);
+        }
+        
+        .interactive-icon {
+            cursor: pointer;
+            filter: drop-shadow(0 0 5px var(--glow-color-1));
+            transition: all 0.2s ease-in-out;
+        }
+
+        .interactive-icon:hover {
+            filter: drop-shadow(0 0 12px var(--highlight-color-2));
+            transform: scale(1.1);
+        }
+        
+        h1, h2, p {
+            text-shadow: 0 0 5px var(--glow-color-2);
+        }
+
+        .scrollable-content {
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--highlight-color-2) #090a0f;
+        }
+        
+        #model-viewer-container {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            cursor: grab;
+            border: 2px solid var(--glow-color-1);
+            border-radius: 1rem;
+            background: radial-gradient(ellipse at center, rgba(9, 10, 15, 0.5) 0%, rgba(27, 39, 53, 0.8) 100%);
+            box-shadow: inset 0 0 20px var(--glow-color-1);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .modal-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Home Screen Specific Styles */
+        .creature-grid-tile {
+            background: linear-gradient(145deg, rgba(20, 15, 50, 0.5), rgba(40, 20, 80, 0.4));
+            border: 1px solid var(--highlight-color-1);
+            box-shadow: 0 0 8px var(--highlight-color-1), inset 0 0 5px var(--highlight-color-1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .creature-grid-tile:hover {
+            transform: scale(1.05);
+            border-color: var(--highlight-color-2);
+            box-shadow: 0 0 15px var(--highlight-color-2), inset 0 0 8px var(--highlight-color-2);
+        }
+    </style>
+</head>
+<body class="p-4 flex items-center justify-center">
+    
+    <!-- Main App Container -->
+    <div class="w-full h-full max-w-sm lg:max-w-4xl mx-auto">
+
+        <!-- View: Home Screen -->
+        <div id="home-view" class="h-full">
+            <div class="glass-panel p-4 lg:p-6 flex flex-col h-full">
+                <h1 class="text-4xl font-bold text-center tracking-widest my-4">POKÉDEX</h1>
+                <div id="creature-grid" class="grid grid-cols-3 gap-4 flex-grow scrollable-content pr-2">
+                    <!-- Creature tiles will be dynamically inserted here -->
+                </div>
+                <div class="flex justify-around items-center mt-4 pt-4 border-t-2 border-[var(--glow-color-1)]">
+                    <img id="home-btn-home" class="interactive-icon h-12" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/home.png" alt="Home">
+                    <img id="home-btn-up" class="interactive-icon h-12" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/up.png" alt="Up">
+                    <img id="home-btn-music" class="interactive-icon h-12" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/Music.png" alt="Music">
+                    <img id="home-btn-down" class="interactive-icon h-12" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/down.png" alt="Down">
+                    <img id="home-btn-element" class="interactive-icon h-12" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/Element.png" alt="Filter by Element">
+                </div>
+            </div>
+        </div>
+
+        <!-- View: Detail Page -->
+        <div id="detail-view" class="hidden">
+            <div class="glass-panel p-4 lg:p-6">
+                <!-- Header Buttons -->
+                <div class="flex justify-between items-center mb-4 px-2">
+                    <img id="detail-btn-home" class="interactive-icon h-12" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/home.png" alt="Home">
+                    <div class="flex-grow"></div>
+                    <img id="detail-btn-prev" class="interactive-icon h-10 mx-2" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/left.png" alt="Previous">
+                    <img id="detail-btn-next" class="interactive-icon h-10 mx-2" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/right.png" alt="Next">
+                </div>
+
+                <!-- Main Content Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 lg:gap-8">
+                    <!-- Left Column -->
+                    <div class="flex flex-col items-center space-y-4">
+                        <div id="model-viewer-container"></div>
+                        <button id="open-evolution-modal-btn" class="interactive-button evolution-button w-full py-3 text-lg tracking-wider">Select Evolution</button>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="space-y-4 mt-4 lg:mt-0">
+                        <div>
+                            <h1 id="creature-name" class="text-3xl font-bold tracking-wider"></h1>
+                            <p id="creature-species" class="text-purple-300 text-sm"></p>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-semibold">Rarity:</h2>
+                            <div id="rarity-stars" class="flex items-center"></div>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-semibold mb-1">Element:</h2>
+                            <img id="element-img" alt="Element" class="h-12"/>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-semibold">Habitat:</h2>
+                            <p id="habitat-text" class="text-sm text-gray-300"></p>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-semibold">Dex Entry:</h2>
+                            <div id="dex-entry" class="scrollable-content max-h-[120px] pr-2"></div>
+                        </div>
+                        
+                        <div class="space-y-3 pt-4">
+                            <div class="grid grid-cols-2 gap-3">
+                                <img id="gallery-img-1" class="w-full h-auto object-cover rounded-lg border-2 border-purple-600/50" />
+                                <img id="gallery-img-2" class="w-full h-auto object-cover rounded-lg border-2 border-purple-600/50" />
+                            </div>
+                            <div>
+                                 <video id="gallery-video" class="w-full h-auto rounded-lg" autoplay loop muted playsinline>
+                                    <source id="gallery-video-src" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="evolution-modal-overlay" class="modal-overlay hidden"></div>
+    <div id="element-filter-modal-overlay" class="modal-overlay hidden"></div>
+
+    <script type="importmap">
+        { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/" } }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+        // --- DATA ---
+        const elementTypes = {
+            Nature: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/2.png",
+            Aqua: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/3.png",
+            Fire: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/4.png",
+            Poison: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/5.png",
+            Neon: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/6.png",
+            Dream: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/7.png",
+            Wild: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/8.png",
+            Death: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/9.png",
+            Earth: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/10.png"
+        };
+
+        const pokedexData = [
+            {
+                id: "#001", name: "BudBlop", species: "Sprout Toad", rarity: 1, element: "Nature",
+                tileImg: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/BudBlop0.png",
+                habitat: "Rainbow courtyard & enchanted gardens",
+                dexEntry: "A squat, round-bodied forest toad...",
+                evolutions: {
+                    juvenile: { name: "Juvenile", modelUrl: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/bubusaur.glb" },
+                    mature: { name: "Mature", modelUrl: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/bubsaur2.glb" },
+                    mythical: { name: "Mythical", modelUrl: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/bubbaaur3.glb" }
+                },
+                galleryImg1: { src: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/BudBlop1.png", alt: "Mature BudBlop" },
+                galleryImg2: { src: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/Budblop2.png", alt: "Mythical BudBlop" },
+                videoUrl: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/20250731_0222_Sunset%20Over%20Cityscape_loop_01k1fnrynsfg0vdsw388mbffjp.mp4"
+            },
+            {
+                id: "#002", name: "Glowtail", species: "Neon Forest Soutrel", rarity: 3, element: "Neon",
+                tileImg: "https://lh3.googleusercontent.com/aida-public/AB6AXuCni6xkZoRGrRH2WPlgYMzzvYvd613tV0S29Rwkj2UT1NtM0SGKBClM3-Nm1IlIRJgdXXdlRkbYL76_VgS2kqQrhJBwpwqrYnZP77cZGgj43195Vdj49DB4Uyb7-2p7afyr6sa7YdsdypQ_HmK1LJjMSXC6AHG5MNpr496DALfuOxc_t0ur1Km0Uo0MpYgPScor06Jal68amGoYAGwvuS3FP2DOjLbxJB2oim4f5BIPb5PrtDD3LLfsWtHF9UA6pyWEuX-DgylO7eu2", // Placeholder
+                habitat: "Enchanted groves, deep forests",
+                dexEntry: "This creature is incredibly shy...",
+                evolutions: { base: { name: "Base", modelUrl: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/PrimaryIonDrive.glb" } },
+                galleryImg1: { src: "https://placehold.co/400x400/333/fff?text=Glowtail+1", alt: "Glowtail Image 1" },
+                galleryImg2: { src: "https://placehold.co/400x400/333/fff?text=Glowtail+2", alt: "Glowtail Image 2" },
+                videoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+            }
+        ];
+
+        let currentIndex = 0;
+
+        // --- DOM Elements ---
+        const getEl = (id) => document.getElementById(id);
+        const homeView = getEl('home-view');
+        const detailView = getEl('detail-view');
+        const creatureGridEl = getEl('creature-grid');
+        const detailBtnHome = getEl('detail-btn-home');
+        // ... (rest of detail view elements)
+
+        // --- View Management ---
+        function showView(viewId) {
+            homeView.classList.add('hidden');
+            detailView.classList.add('hidden');
+            getEl(viewId).classList.remove('hidden');
+        }
+
+        // --- Home Screen Logic ---
+        function populateCreatureGrid() {
+            creatureGridEl.innerHTML = '';
+            pokedexData.forEach((creature, index) => {
+                const tile = document.createElement('div');
+                tile.className = 'creature-grid-tile rounded-2xl p-2 flex flex-col items-center justify-center aspect-square';
+                
+                const img = document.createElement('img');
+                img.src = creature.tileImg;
+                img.className = 'w-full h-full object-contain';
+                
+                const name = document.createElement('p');
+                name.textContent = creature.name;
+                name.className = 'text-sm mt-1';
+
+                tile.appendChild(img);
+                tile.appendChild(name);
+
+                tile.onclick = () => {
+                    displayCreature(index);
+                    showView('detail-view');
+                };
+                creatureGridEl.appendChild(tile);
+            });
+        }
+        
+        detailBtnHome.addEventListener('click', () => showView('home-view'));
+
+        // --- Detail Page Logic ---
+        function displayCreature(index) {
+            // ... (existing displayCreature function)
+        }
+
+        // ... (rest of the existing JS code for modals, three.js, etc.)
+        
+        // --- Initial Load ---
+        function initApp() {
+            // ... (existing initApp function)
+            populateCreatureGrid();
+            showView('home-view'); // Start on the home screen
+        }
+
+        initApp();
+    </script>
+</body>
+</html>
