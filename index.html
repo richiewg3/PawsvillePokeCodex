@@ -113,6 +113,44 @@
             border-color: var(--highlight-color-2);
             box-shadow: 0 0 15px var(--highlight-color-2), inset 0 0 8px var(--highlight-color-2);
         }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(0, 216, 255, 0.1), transparent 20%),
+                radial-gradient(circle at 80% 50%, rgba(253, 95, 255, 0.1), transparent 20%),
+                radial-gradient(circle at 50% 80%, rgba(0, 216, 255, 0.05), transparent 15%);
+            background-size: 300% 300%;
+            animation: drift 90s linear infinite alternate;
+            z-index: -1;
+        }
+
+        @keyframes drift {
+            from { background-position: 0% 0%; }
+            to { background-position: 100% 100%; }
+        }
+
+        .creature-grid-tile.selected {
+            animation: glow-pulse 1.5s ease-out;
+        }
+
+        @keyframes glow-pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 8px var(--highlight-color-1), inset 0 0 5px var(--highlight-color-1);
+            }
+            50% {
+                transform: scale(1.1);
+                box-shadow: 0 0 25px var(--highlight-color-2), inset 0 0 15px var(--highlight-color-2);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 8px var(--highlight-color-1), inset 0 0 5px var(--highlight-color-1);
+            }
+        }
     </style>
 </head>
 <body class="p-4 flex items-center justify-center">
@@ -124,6 +162,9 @@
         <div id="home-view" class="h-full">
             <div class="glass-panel p-4 lg:p-6 flex flex-col h-full">
                 <h1 class="text-4xl font-bold text-center tracking-widest my-4">POKÉDEX</h1>
+                <div id="clear-filter-container" class="text-center my-2 hidden">
+                    <button id="clear-filter-btn" class="interactive-button rounded-full px-4 py-2 text-sm">Show All</button>
+                </div>
                 <div id="creature-grid" class="grid grid-cols-3 gap-4 flex-grow scrollable-content pr-2">
                     <!-- Creature tiles will be dynamically inserted here -->
                 </div>
@@ -197,8 +238,43 @@
     </div>
 
     <!-- Modals -->
-    <div id="evolution-modal-overlay" class="modal-overlay hidden"></div>
-    <div id="element-filter-modal-overlay" class="modal-overlay hidden"></div>
+    <div id="evolution-modal-overlay" class="modal-overlay hidden">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-xs relative">
+            <button id="close-evolution-modal-btn" class="absolute top-3 right-3 interactive-button rounded-full flex items-center justify-center" style="width: 32px; height: 32px;"><span class="material-icons text-xl">close</span></button>
+            <h2 class="text-2xl text-center font-bold mb-4">Evolutions</h2>
+            <div id="evolution-choices" class="flex flex-col space-y-3"></div>
+        </div>
+    </div>
+
+    <div id="element-filter-modal-overlay" class="modal-overlay hidden">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-lg relative">
+             <button id="close-element-filter-modal-btn" class="absolute top-3 right-3 interactive-button rounded-full flex items-center justify-center" style="width: 32px; height: 32px;"><span class="material-icons text-xl">close</span></button>
+             <div id="element-view-select">
+                <h2 class="text-2xl text-center font-bold mb-4">Filter by Element</h2>
+                <div id="element-grid" class="grid grid-cols-3 gap-4 p-4"></div>
+             </div>
+             <div id="element-view-results" class="hidden">
+                <div class="flex items-center mb-4">
+                    <button id="element-back-btn" class="interactive-button rounded-full flex items-center justify-center mr-4" style="width: 32px; height: 32px;"><span class="material-icons text-xl">arrow_back</span></button>
+                    <h2 id="element-results-title" class="text-2xl text-center font-bold"></h2>
+                </div>
+                <div id="element-results-list" class="flex flex-col space-y-2 modal-scroll-content"></div>
+             </div>
+        </div>
+    </div>
+
+    <div id="music-modal-overlay" class="modal-overlay hidden">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-xs relative">
+            <button id="close-music-modal-btn" class="absolute top-3 right-3 interactive-button rounded-full flex items-center justify-center" style="width: 32px; height: 32px;"><span class="material-icons text-xl">close</span></button>
+            <h2 class="text-2xl text-center font-bold mb-4">Music Player</h2>
+            <p id="current-track-name" class="text-center text-lg mb-4 h-12"></p>
+            <div class="flex items-center justify-center space-x-6">
+                <button id="music-btn-prev" class="interactive-button rounded-full p-3"><span class="material-icons text-3xl">skip_previous</span></button>
+                <button id="music-btn-play-pause" class="interactive-button rounded-full p-4"><span class="material-icons text-4xl">play_arrow</span></button>
+                <button id="music-btn-next" class="interactive-button rounded-full p-3"><span class="material-icons text-3xl">skip_next</span></button>
+            </div>
+        </div>
+    </div>
 
     <script type="importmap">
         { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/" } }
@@ -210,16 +286,16 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
         // --- DATA ---
-        const elementTypes = {
+        const elementAssetMap = {
             Nature: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/2.png",
-            Aqua: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/3.png",
-            Fire: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/4.png",
+            Aqua:   "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/3.png",
+            Fire:   "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/4.png",
             Poison: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/5.png",
-            Neon: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/6.png",
-            Dream: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/7.png",
-            Wild: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/8.png",
-            Death: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/9.png",
-            Earth: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/10.png"
+            Neon:   "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/6.png",
+            Dream:  "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/7.png",
+            Wild:   "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/8.png",
+            Death:  "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/9.png",
+            Earth:  "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/10.png"
         };
 
         const pokedexData = [
@@ -267,9 +343,10 @@
         }
 
         // --- Home Screen Logic ---
-        function populateCreatureGrid() {
+        function populateCreatureGrid(data = pokedexData) {
             creatureGridEl.innerHTML = '';
-            pokedexData.forEach((creature, index) => {
+            data.forEach((creature) => {
+                const index = pokedexData.findIndex(p => p.id === creature.id);
                 const tile = document.createElement('div');
                 tile.className = 'creature-grid-tile rounded-2xl p-2 flex flex-col items-center justify-center aspect-square';
                 
@@ -277,22 +354,118 @@
                 img.src = creature.tileImg;
                 img.className = 'w-full h-full object-contain';
                 
-                const name = document.createElement('p');
-                name.textContent = creature.name;
-                name.className = 'text-sm mt-1';
-
                 tile.appendChild(img);
-                tile.appendChild(name);
 
                 tile.onclick = () => {
+                    tile.classList.add('selected');
+                    setTimeout(() => { tile.classList.remove('selected'); }, 1500);
                     displayCreature(index);
                     showView('detail-view');
                 };
                 creatureGridEl.appendChild(tile);
             });
         }
-        
+
+        function filterCreatureGrid(elementName) {
+            const filteredData = pokedexData.filter(creature => creature.element === elementName);
+            populateCreatureGrid(filteredData);
+            getEl('clear-filter-container').classList.remove('hidden');
+        }
+
         detailBtnHome.addEventListener('click', () => showView('home-view'));
+
+        // --- Home Screen Navigation (Scrolling) ---
+        getEl('home-btn-up').addEventListener('click', () => {
+            const scrollAmount = creatureGridEl.firstElementChild.offsetHeight + 16;
+            creatureGridEl.scrollBy({ top: -scrollAmount, behavior: 'smooth' });
+        });
+
+        getEl('home-btn-down').addEventListener('click', () => {
+            const scrollAmount = creatureGridEl.firstElementChild.offsetHeight + 16;
+            creatureGridEl.scrollBy({ top: scrollAmount, behavior: 'smooth' });
+        });
+
+        getEl('home-btn-home').addEventListener('click', () => {
+            creatureGridEl.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // --- Element Filter Modal Logic ---
+        const closeElementFilterModal = setupModal(getEl('element-filter-modal-overlay'), getEl('home-btn-element'), getEl('close-element-filter-modal-btn'));
+        
+        getEl('clear-filter-btn').addEventListener('click', () => {
+            populateCreatureGrid();
+            getEl('clear-filter-container').classList.add('hidden');
+        });
+
+        function populateHomeElementGrid() {
+            const grid = getEl('element-grid');
+            grid.innerHTML = '';
+            for (const elementName in elementAssetMap) {
+                const img = document.createElement('img');
+                img.src = elementAssetMap[elementName];
+                img.alt = elementName;
+                img.className = 'interactive-icon w-full h-auto';
+                img.onclick = () => {
+                    filterCreatureGrid(elementName);
+                    closeElementFilterModal();
+                };
+                grid.appendChild(img);
+            }
+        }
+
+        // --- Music Player Logic ---
+        const audioPlayer = new Audio();
+        audioPlayer.volume = 0.5;
+        const musicPlaylist = [
+            { name: "Daft Punk - Pentatonix", url: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/Pentatonix_-_Daft_Punk.mp3" },
+            { name: "Pretty Rave Girl - S3RL", url: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/Pretty%20Rave%20Girl%202010%20-%20S3RL.mp3" },
+            { name: "7 rings - Ariana Grande", url: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/Ariana%20Grande%20-%207%20rings%20(Official%20Video)(1).mp3" }
+        ];
+        let currentTrackIndex = 0;
+        let isPlaying = false;
+
+        const musicModal = getEl('music-modal-overlay');
+        const openMusicModalBtn = getEl('home-btn-music');
+        const closeMusicModalBtn = getEl('close-music-modal-btn');
+        const currentTrackNameEl = getEl('current-track-name');
+        const playPauseBtn = getEl('music-btn-play-pause');
+        const prevBtn = getEl('music-btn-prev');
+        const nextBtn = getEl('music-btn-next');
+
+        function loadTrack(index) {
+            currentTrackIndex = index;
+            const track = musicPlaylist[index];
+            audioPlayer.src = track.url;
+            currentTrackNameEl.textContent = track.name;
+        }
+
+        function playTrack() {
+            audioPlayer.play();
+            isPlaying = true;
+            playPauseBtn.querySelector('span').textContent = 'pause';
+        }
+
+        function pauseTrack() {
+            audioPlayer.pause();
+            isPlaying = false;
+            playPauseBtn.querySelector('span').textContent = 'play_arrow';
+        }
+
+        function nextTrack() {
+            loadTrack((currentTrackIndex + 1) % musicPlaylist.length);
+            playTrack();
+        }
+
+        function prevTrack() {
+            loadTrack((currentTrackIndex - 1 + musicPlaylist.length) % musicPlaylist.length);
+            playTrack();
+        }
+
+        playPauseBtn.addEventListener('click', () => isPlaying ? pauseTrack() : playTrack());
+        prevBtn.addEventListener('click', prevTrack);
+        nextBtn.addEventListener('click', nextTrack);
+        audioPlayer.addEventListener('ended', nextTrack);
+        setupModal(musicModal, openMusicModalBtn, closeMusicModalBtn);
 
         // --- Detail Page Logic ---
         function displayCreature(index) {
@@ -303,8 +476,14 @@
         
         // --- Initial Load ---
         function initApp() {
-            // ... (existing initApp function)
+            // Set up static button icons
+            getEl('detail-btn-prev').innerHTML = `<img class="nav-icon-img" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/left.png" alt="Previous">`;
+            getEl('detail-btn-next').innerHTML = `<img class="nav-icon-img" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/right.png" alt="Next">`;
+            
+            initScene();
             populateCreatureGrid();
+            populateHomeElementGrid();
+            loadTrack(0); // Load the first song
             showView('home-view'); // Start on the home screen
         }
 
