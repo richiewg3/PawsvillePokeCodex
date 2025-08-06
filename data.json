@@ -1,0 +1,32 @@
+[
+  {
+    "id": "#001",
+    "name": "BudBlop",
+    "species": "Sprout Toad",
+    "rarity": 1,
+    "element": "Nature",
+    "habitat": "Rainbow courtyard & enchanted gardens",
+    "dexEntry": "A squat, round-bodied forest toad...",
+    "evolutions": {
+      "juvenile": { "name": "Juvenile", "modelUrl": "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/bubusaur.glb" },
+      "mature": { "name": "Mature", "modelUrl": "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/bubsaur2.glb" },
+      "mythical": { "name": "Mythical", "modelUrl": "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/bubbaaur3.glb" }
+    },
+    "galleryImg1": { "src": "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/BudBlop1.png", "alt": "Mature BudBlop" },
+    "galleryImg2": { "src": "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/Budblop2.png", "alt": "Mythical BudBlop" },
+    "videoUrl": "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/20250731_0222_Sunset%20Over%20Cityscape_loop_01k1fnrynsfg0vdsw388mbffjp.mp4"
+  },
+  {
+    "id": "#002",
+    "name": "Glowtail",
+    "species": "Neon Forest Soutrel",
+    "rarity": 3,
+    "element": "Neon",
+    "habitat": "Enchanted groves, deep forests",
+    "dexEntry": "This creature is incredibly shy...",
+    "evolutions": { "base": { "name": "Base", "modelUrl": "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/PrimaryIonDrive.glb" } },
+    "galleryImg1": { "src": "https://placehold.co/400x400/333/fff?text=Glowtail+1", "alt": "Glowtail Image 1" },
+    "galleryImg2": { "src": "https://placehold.co/400x400/333/fff?text=Glowtail+2", "alt": "Glowtail Image 2" },
+    "videoUrl": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+  }
+]
