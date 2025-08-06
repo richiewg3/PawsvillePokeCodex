@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Pokédex Prototype - Neon Glass</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --glow-color-1: rgba(0, 216, 255, 0.7);
+            --glow-color-2: #00D8FF;
+            --highlight-color-1: rgba(253, 95, 255, 0.6);
+            --highlight-color-2: #FD5FFF;
+        }
+
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+            color: #e0fbfc;
+            min-height: 100vh;
+        }
+
+        .glass-panel {
+            background: linear-gradient(145deg, rgba(34, 24, 75, 0.6), rgba(60, 30, 110, 0.5));
+            backdrop-filter: blur(12px);
+            border: 2px solid var(--glow-color-1);
+            border-radius: 2rem;
+            box-shadow: 0 0 25px var(--glow-color-1), inset 0 0 15px var(--glow-color-1);
+        }
+
+        .interactive-button {
+            background: linear-gradient(145deg, rgba(34, 24, 75, 0.8), rgba(60, 30, 110, 0.7));
+            border: 1px solid var(--highlight-color-1);
+            box-shadow: 0 0 8px var(--highlight-color-1), inset 0 0 5px var(--highlight-color-1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            color: #e0fbfc;
+            text-shadow: 0 0 5px var(--glow-color-2);
+        }
+        
+        .interactive-button:hover {
+            background: linear-gradient(145deg, rgba(50, 40, 100, 0.9), rgba(80, 50, 130, 0.8));
+            border-color: var(--highlight-color-2);
+            box-shadow: 0 0 15px var(--highlight-color-2), inset 0 0 8px var(--highlight-color-2);
+        }
+
+        .evolution-button, .evolution-choice-btn, .creature-list-item {
+             border-radius: 9999px;
+        }
+        
+        /* NEW: Styles for making images behave like buttons */
+        .interactive-icon {
+            cursor: pointer;
+            filter: drop-shadow(0 0 5px var(--glow-color-1));
+            transition: all 0.2s ease-in-out;
+        }
+
+        .interactive-icon:hover {
+            filter: drop-shadow(0 0 12px var(--highlight-color-2));
+            transform: scale(1.1);
+        }
+        
+        h1, h2, p, .scrollable-text {
+            text-shadow: 0 0 5px var(--glow-color-2);
+        }
+
+        .scrollable-text, .modal-scroll-content {
+            max-height: 120px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--highlight-color-2) #090a0f;
+        }
+        
+        #model-viewer-container {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            cursor: grab;
+            border: 2px solid var(--glow-color-1);
+            border-radius: 1rem;
+            background: radial-gradient(ellipse at center, rgba(9, 10, 15, 0.5) 0%, rgba(27, 39, 53, 0.8) 100%);
+            box-shadow: inset 0 0 20px var(--glow-color-1);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .modal-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body class="p-4 flex items-center justify-center">
+    <div class="w-full max-w-sm lg:max-w-4xl mx-auto">
+        <div class="glass-panel p-4 lg:p-6">
+            <!-- Header Buttons - Now using IMG tags directly -->
+            <div class="flex justify-between items-center mb-4 px-2">
+                <img id="btn-prev" class="interactive-icon h-10" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/left.png" alt="Previous">
+                <div class="flex space-x-4 items-center">
+                    <img id="btn-random" class="interactive-icon h-10" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/random.png" alt="Random">
+                    <img id="btn-home" class="interactive-icon h-12" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/home.png" alt="Home">
+                    <img id="btn-element-filter" class="interactive-icon h-10" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/Element.png" alt="Filter by Element">
+                </div>
+                <img id="btn-next" class="interactive-icon h-10" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/right.png" alt="Next">
+            </div>
+
+            <!-- Main Content Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 lg:gap-8">
+                <!-- Left Column -->
+                <div class="flex flex-col items-center space-y-4">
+                    <div id="model-viewer-container"></div>
+                    <button id="open-evolution-modal-btn" class="interactive-button evolution-button w-full py-3 text-lg tracking-wider">Select Evolution</button>
+                </div>
+
+                <!-- Right Column -->
+                <div class="space-y-4 mt-4 lg:mt-0">
+                    <div>
+                        <h1 id="creature-name" class="text-3xl font-bold tracking-wider"></h1>
+                        <p id="creature-species" class="text-purple-300 text-sm"></p>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold">Rarity:</h2>
+                        <div id="rarity-stars" class="flex items-center"></div>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold mb-1">Element:</h2>
+                        <img id="element-img" alt="Element" class="h-12"/>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold">Habitat:</h2>
+                        <p id="habitat-text" class="text-sm text-gray-300"></p>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold">Dex Entry:</h2>
+                        <div id="dex-entry" class="scrollable-text text-xs text-gray-300 leading-relaxed pr-2"></div>
+                    </div>
+                    
+                    <div class="space-y-3 pt-4">
+                        <div class="grid grid-cols-2 gap-3">
+                            <img id="gallery-img-1" class="w-full h-auto object-cover rounded-lg border-2 border-purple-600/50" />
+                            <img id="gallery-img-2" class="w-full h-auto object-cover rounded-lg border-2 border-purple-600/50" />
+                        </div>
+                        <div>
+                             <video id="gallery-video" class="w-full h-auto rounded-lg" autoplay loop muted playsinline>
+                                <source id="gallery-video-src" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Evolution Modal -->
+    <div id="evolution-modal-overlay" class="modal-overlay hidden">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-xs relative">
+            <button id="close-evolution-modal-btn" class="absolute top-3 right-3 interactive-button rounded-full flex items-center justify-center" style="width: 32px; height: 32px;"><span class="material-icons text-xl">close</span></button>
+            <h2 class="text-2xl text-center font-bold mb-4">Evolutions</h2>
+            <div id="evolution-choices" class="flex flex-col space-y-3"></div>
+        </div>
+    </div>
+
+    <!-- Element Filter Modal -->
+    <div id="element-filter-modal-overlay" class="modal-overlay hidden">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-lg relative">
+             <button id="close-element-filter-modal-btn" class="absolute top-3 right-3 interactive-button rounded-full flex items-center justify-center" style="width: 32px; height: 32px;"><span class="material-icons text-xl">close</span></button>
+             <div id="element-view-select">
+                <h2 class="text-2xl text-center font-bold mb-4">Filter by Element</h2>
+                <div id="element-grid" class="grid grid-cols-3 gap-4 p-4"></div>
+             </div>
+             <div id="element-view-results" class="hidden">
+                <div class="flex items-center mb-4">
+                    <button id="element-back-btn" class="interactive-button rounded-full flex items-center justify-center mr-4" style="width: 32px; height: 32px;"><span class="material-icons text-xl">arrow_back</span></button>
+                    <h2 id="element-results-title" class="text-2xl text-center font-bold"></h2>
+                </div>
+                <div id="element-results-list" class="flex flex-col space-y-2 modal-scroll-content"></div>
+             </div>
+        </div>
+    </div>
+
+    <script type="importmap">
+        { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/" } }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+        // --- DATA ---
+        const elementTypes = {
+            Nature: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/2.png",
+            Aqua: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/3.png",
+            Fire: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/4.png",
+            Poison: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/5.png",
+            Neon: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/6.png",
+            Dream: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/7.png",
+            Wild: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/8.png",
+            Death: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/9.png",
+            Earth: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/10.png"
+        };
+
+        const pokedexData = [
+            {
+                id: "#001", name: "BudBlop", species: "Sprout Toad", rarity: 1, element: "Nature",
+                habitat: "Rainbow courtyard & enchanted gardens",
+                dexEntry: "A squat, round-bodied forest toad...",
+                evolutions: {
+                    juvenile: { name: "Juvenile", modelUrl: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/bubusaur.glb" },
+                    mature: { name: "Mature", modelUrl: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/bubsaur2.glb" },
+                    mythical: { name: "Mythical", modelUrl: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/bubbaaur3.glb" }
+                },
+                galleryImg1: { src: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/BudBlop1.png", alt: "Mature BudBlop" },
+                galleryImg2: { src: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/Budblop2.png", alt: "Mythical BudBlop" },
+                videoUrl: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/20250731_0222_Sunset%20Over%20Cityscape_loop_01k1fnrynsfg0vdsw388mbffjp.mp4"
+            },
+            {
+                id: "#002", name: "Glowtail", species: "Neon Forest Soutrel", rarity: 3, element: "Neon",
+                habitat: "Enchanted groves, deep forests",
+                dexEntry: "This creature is incredibly shy...",
+                evolutions: { base: { name: "Base", modelUrl: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/PrimaryIonDrive.glb" } },
+                galleryImg1: { src: "https://placehold.co/400x400/333/fff?text=Glowtail+1", alt: "Glowtail Image 1" },
+                galleryImg2: { src: "https://placehold.co/400x400/333/fff?text=Glowtail+2", alt: "Glowtail Image 2" },
+                videoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+            }
+        ];
+
+        let currentIndex = 0;
+
+        // --- DOM Elements ---
+        const getEl = (id) => document.getElementById(id);
+        const creatureNameEl = getEl('creature-name'), creatureSpeciesEl = getEl('creature-species'), rarityStarsEl = getEl('rarity-stars'), elementImgEl = getEl('element-img'), habitatTextEl = getEl('habitat-text'), dexEntryEl = getEl('dex-entry'), galleryImg1El = getEl('gallery-img-1'), galleryImg2El = getEl('gallery-img-2'), galleryVideoEl = getEl('gallery-video'), galleryVideoSrcEl = getEl('gallery-video-src'), btnNext = getEl('btn-next'), btnPrev = getEl('btn-prev'), btnRandom = getEl('btn-random'), btnHome = getEl('btn-home'), btnElementFilter = getEl('btn-element-filter'), openModalBtn = getEl('open-evolution-modal-btn'), evolutionModal = getEl('evolution-modal-overlay'), closeEvolutionModalBtn = getEl('close-evolution-modal-btn'), evolutionChoicesEl = getEl('evolution-choices'), elementFilterModal = getEl('element-filter-modal-overlay'), closeElementFilterModalBtn = getEl('close-element-filter-modal-btn'), elementGridEl = getEl('element-grid'), elementResultsListEl = getEl('element-results-list'), elementViewSelect = getEl('element-view-select'), elementViewResults = getEl('element-view-results'), elementResultsTitle = getEl('element-results-title'), elementBackBtn = getEl('element-back-btn');
+
+        // --- Display Logic ---
+        function displayCreature(index) {
+            const creature = pokedexData[index];
+            currentIndex = index;
+            
+            creatureNameEl.textContent = `${creature.id}-${creature.name}`;
+            creatureSpeciesEl.textContent = `Species: ${creature.species}`;
+            renderRarity(creature.rarity);
+            elementImgEl.src = elementTypes[creature.element];
+            habitatTextEl.textContent = creature.habitat;
+            dexEntryEl.textContent = creature.dexEntry;
+            galleryImg1El.src = creature.galleryImg1.src;
+            galleryImg1El.alt = creature.galleryImg1.alt;
+            galleryImg2El.src = creature.galleryImg2.src;
+            galleryImg2El.alt = creature.galleryImg2.alt;
+            galleryVideoSrcEl.src = creature.videoUrl;
+            galleryVideoEl.load();
+
+            const baseEvoKey = Object.keys(creature.evolutions)[0];
+            loadModel(creature.evolutions[baseEvoKey].modelUrl);
+            populateEvolutionModal(creature.evolutions);
+        }
+
+        function renderRarity(rarity) {
+            rarityStarsEl.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const star = document.createElement('span');
+                star.className = 'material-icons';
+                star.textContent = i < rarity ? 'star' : 'star_border';
+                star.classList.add(i < rarity ? 'text-yellow-400' : 'text-gray-500');
+                rarityStarsEl.appendChild(star);
+            }
+        }
+
+        // --- Navigation ---
+        btnNext.addEventListener('click', () => displayCreature((currentIndex + 1) % pokedexData.length));
+        btnPrev.addEventListener('click', () => displayCreature((currentIndex - 1 + pokedexData.length) % pokedexData.length));
+        btnRandom.addEventListener('click', () => {
+            let newIndex;
+            do { newIndex = Math.floor(Math.random() * pokedexData.length); } while (pokedexData.length > 1 && newIndex === currentIndex);
+            displayCreature(newIndex);
+        });
+        btnHome.addEventListener('click', () => displayCreature(0));
+
+        // --- Modal Logic ---
+        function setupModal(modal, openBtn, closeBtn) {
+            const open = () => { modal.classList.remove('hidden'); setTimeout(() => modal.classList.add('visible'), 10); };
+            const close = () => { modal.classList.remove('visible'); setTimeout(() => modal.classList.add('hidden'), 300); };
+            openBtn.addEventListener('click', open);
+            closeBtn.addEventListener('click', close);
+            modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+            return close;
+        }
+
+        const closeEvolutionModal = setupModal(evolutionModal, openModalBtn, closeEvolutionModalBtn);
+        const closeElementFilterModal = setupModal(elementFilterModal, btnElementFilter, closeElementFilterModalBtn);
+
+        function populateEvolutionModal(evolutions) {
+            evolutionChoicesEl.innerHTML = '';
+            for (const key in evolutions) {
+                const btn = document.createElement('button');
+                btn.textContent = evolutions[key].name;
+                btn.className = 'evolution-choice-btn interactive-button w-full py-2 text-lg';
+                btn.onclick = () => { loadModel(evolutions[key].modelUrl); closeEvolutionModal(); };
+                evolutionChoicesEl.appendChild(btn);
+            }
+        }
+
+        // --- Element Filter Logic ---
+        function populateElementGrid() {
+            elementGridEl.innerHTML = '';
+            for (const typeName in elementTypes) {
+                const img = document.createElement('img');
+                img.src = elementTypes[typeName];
+                img.alt = typeName;
+                img.className = 'interactive-icon w-full h-auto'; // Let the grid control the size
+                img.onclick = () => showElementResults(typeName);
+                elementGridEl.appendChild(img);
+            }
+        }
+
+        function showElementResults(typeName) {
+            elementResultsTitle.textContent = `${typeName} Creatures`;
+            elementResultsListEl.innerHTML = '';
+            const results = pokedexData.filter(c => c.element === typeName);
+            if(results.length > 0) {
+                results.forEach(creature => {
+                    const btn = document.createElement('button');
+                    btn.textContent = `${creature.id} - ${creature.name}`;
+                    btn.className = 'creature-list-item interactive-button w-full py-2 text-md text-left px-4';
+                    btn.onclick = () => {
+                        const creatureIndex = pokedexData.findIndex(c => c.id === creature.id);
+                        displayCreature(creatureIndex);
+                        closeElementFilterModal();
+                    };
+                    elementResultsListEl.appendChild(btn);
+                });
+            } else {
+                const noResults = document.createElement('p');
+                noResults.textContent = 'No creatures found for this element.';
+                noResults.className = 'text-center';
+                elementResultsListEl.appendChild(noResults);
+            }
+            elementViewSelect.classList.add('hidden');
+            elementViewResults.classList.remove('hidden');
+        }
+        
+        elementBackBtn.addEventListener('click', () => {
+             elementViewResults.classList.add('hidden');
+             elementViewSelect.classList.remove('hidden');
+        });
+
+        // --- Three.js Scene ---
+        let scene, camera, renderer, controls, currentModel = null;
+        const container = getEl('model-viewer-container'), loader = new GLTFLoader();
+
+        function initScene() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.z = 3;
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+            controls = new OrbitControls(camera, renderer.domElement);
+            Object.assign(controls, { enableDamping: true, dampingFactor: 0.05, enableZoom: false, enablePan: false, autoRotate: true, autoRotateSpeed: 1.0 });
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+            const directionalLight = new THREE.DirectionalLight(0xfff0dd, 2);
+            directionalLight.position.set(5, 5, 5);
+            scene.add(ambientLight, directionalLight);
+            window.addEventListener('resize', onWindowResize);
+            animate();
+        }
+
+        function loadModel(modelUrl) {
+            if (currentModel) scene.remove(currentModel);
+            loader.load(modelUrl, (gltf) => {
+                currentModel = gltf.scene;
+                const box = new THREE.Box3().setFromObject(currentModel);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scale = 2.5 / maxDim;
+                currentModel.position.sub(center);
+                currentModel.scale.multiplyScalar(scale);
+                scene.add(currentModel);
+            }, undefined, (error) => console.error('An error happened:', error));
+        }
+
+        function onWindowResize() {
+            if (!container || !renderer) return;
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Initial Load ---
+        function initApp() {
+            initScene();
+            populateElementGrid();
+            displayCreature(currentIndex);
+        }
+
+        initApp();
+    </script>
+</body>
+</html>
