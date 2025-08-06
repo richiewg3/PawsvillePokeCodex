@@ -1,6 +1,6 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';
-import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/loaders/GLTFLoader.js';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 // --- DATA (Embedded to solve CORS issue) ---
 const pokedexData = [
@@ -40,17 +40,10 @@ const elementAssetMap = {
     "Death":  "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/9.png",
     "Earth":  "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/10.png"
 };
-const musicPlaylist = [
-    { "name": "Daft Punk - Pentatonix", "url": "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/Pentatonix_-_Daft_Punk.mp3" },
-    { "name": "Pretty Rave Girl - S3RL", "url": "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/Pretty%20Rave%20Girl%202010%20-%20S3RL.mp3" },
-    { "name": "7 rings - Ariana Grande", "url": "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/Ariana%20Grande%20-%207%20rings%20(Official%20Video)(1).mp3" }
-];
 
 // --- STATE MANAGEMENT ---
 let currentIndex = 0;
 let currentModel = null;
-let isPlaying = false;
-let currentTrackIndex = 0;
 
 // --- DOM ELEMENT REFERENCES (Refactored) ---
 const getEl = (id) => document.getElementById(id);
@@ -84,22 +77,24 @@ const detailElements = {
 const modals = {
     evolution: { overlay: getEl('evolution-modal-overlay'), openBtn: getEl('open-evolution-modal-btn'), closeBtn: getEl('close-evolution-modal-btn'), choices: getEl('evolution-choices') },
     elementFilter: { overlay: getEl('element-filter-modal-overlay'), openBtn: homeElements.btnElement, closeBtn: getEl('close-element-filter-modal-btn'), grid: getEl('element-grid') },
-    music: { overlay: getEl('music-modal-overlay'), openBtn: homeElements.btnMusic, closeBtn: getEl('close-music-modal-btn'), trackName: getEl('current-track-name'), btnPrev: getEl('music-btn-prev'), btnPlayPause: getEl('music-btn-play-pause'), btnNext: getEl('music-btn-next') },
+    music: { overlay: getEl('music-modal-overlay'), openBtn: homeElements.btnMusic, closeBtn: getEl('close-music-modal-btn') },
 };
-const audioPlayer = new Audio();
+
+// --- THREE.JS SCENE VARIABLES ---
+let scene, camera, renderer, controls;
+const loader = new GLTFLoader();
 
 // --- CORE FUNCTIONS ---
 function showView(viewName) {
-    view.home.classList.add('hidden');
-    view.detail.classList.add('hidden');
-    view[viewName].classList.remove('hidden');
+    view.home.classList.toggle('hidden', viewName !== 'home');
+    view.detail.classList.toggle('hidden', viewName !== 'detail');
 }
 
 function populateCreatureGrid(data = pokedexData) {
     homeElements.grid.innerHTML = '';
     data.forEach(creature => {
         const tile = document.createElement('div');
-        tile.className = 'creature-grid-tile rounded-2xl p-2 flex flex-col items-center justify-center aspect-square';
+        tile.className = 'creature-grid-tile rounded-2xl p-2 flex flex-col items-center justify-center aspect-square cursor-pointer';
         tile.dataset.creatureId = creature.id;
         const img = document.createElement('img');
         img.src = creature.tileImg;
@@ -111,12 +106,17 @@ function populateCreatureGrid(data = pokedexData) {
 
 function displayCreature(index) {
     const creature = pokedexData[index];
+    if (!creature) return;
     currentIndex = index;
+
     updateCreatureText(creature);
     updateCreatureMedia(creature);
     renderRarity(creature.rarity);
+
     const baseEvoKey = Object.keys(creature.evolutions)[0];
-    loadModel(creature.evolutions[baseEvoKey].modelUrl);
+    if (baseEvoKey) {
+        loadModel(creature.evolutions[baseEvoKey].modelUrl);
+    }
     populateEvolutionModal(creature.evolutions);
 }
 
@@ -128,12 +128,12 @@ function updateCreatureText(creature) {
 }
 
 function updateCreatureMedia(creature) {
-    detailElements.elementImg.src = elementAssetMap[creature.element];
-    detailElements.galleryImg1.src = creature.galleryImg1.src;
-    detailElements.galleryImg1.alt = creature.galleryImg1.alt;
-    detailElements.galleryImg2.src = creature.galleryImg2.src;
-    detailElements.galleryImg2.alt = creature.galleryImg2.alt;
-    detailElements.galleryVideoSrc.src = creature.videoUrl;
+    detailElements.elementImg.src = elementAssetMap[creature.element] || '';
+    detailElements.galleryImg1.src = creature.galleryImg1.src || '';
+    detailElements.galleryImg1.alt = creature.galleryImg1.alt || '';
+    detailElements.galleryImg2.src = creature.galleryImg2.src || '';
+    detailElements.galleryImg2.alt = creature.galleryImg2.alt || '';
+    detailElements.galleryVideoSrc.src = creature.videoUrl || '';
     detailElements.galleryVideo.load();
 }
 
@@ -163,27 +163,81 @@ function populateEvolutionModal(evolutions) {
         const btn = document.createElement('button');
         btn.textContent = evolutions[key].name;
         btn.className = 'interactive-button evolution-button w-full py-2 text-lg';
-        btn.onclick = () => { loadModel(evolutions[key].modelUrl); modals.evolution.closeBtn.click(); };
+        btn.onclick = () => {
+            loadModel(evolutions[key].modelUrl);
+            modals.evolution.closeBtn.click();
+        };
         modals.evolution.choices.appendChild(btn);
     }
 }
 
-// Placeholder implementations for omitted sections
-function loadModel(url) {
-    console.log('loadModel placeholder', url);
-}
-function populateHomeElementGrid() {
-    console.log('populateHomeElementGrid placeholder');
-}
-function loadTrack(index) {
-    console.log('loadTrack placeholder', index);
-}
+// --- THREE.JS FUNCTIONS ---
 function initScene() {
-    console.log('initScene placeholder');
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, detailElements.modelViewerContainer.clientWidth / detailElements.modelViewerContainer.clientHeight, 0.1, 1000);
+    camera.position.z = 3;
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(detailElements.modelViewerContainer.clientWidth, detailElements.modelViewerContainer.clientHeight);
+    detailElements.modelViewerContainer.appendChild(renderer.domElement);
+
+    controls = new OrbitControls(camera, renderer.domElement);
+    Object.assign(controls, {
+        enableDamping: true, dampingFactor: 0.05, enableZoom: false,
+        enablePan: false, autoRotate: true, autoRotateSpeed: 1.0
+    });
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+    const directionalLight = new THREE.DirectionalLight(0xfff0dd, 2);
+    directionalLight.position.set(5, 5, 5);
+    scene.add(ambientLight, directionalLight);
+
+    window.addEventListener('resize', onWindowResize, false);
+    animate();
+}
+
+function loadModel(modelUrl) {
+    if (!modelUrl) return;
+    if (currentModel) {
+        scene.remove(currentModel);
+    }
+    loader.load(modelUrl, (gltf) => {
+        currentModel = gltf.scene;
+        const box = new THREE.Box3().setFromObject(currentModel);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = 2.5 / maxDim;
+        currentModel.position.sub(center);
+        currentModel.scale.multiplyScalar(scale);
+        scene.add(currentModel);
+    }, undefined, (error) => console.error('An error happened loading the model:', error));
+}
+
+function onWindowResize() {
+    if (!renderer || !camera) return;
+    const container = detailElements.modelViewerContainer;
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    if (controls && renderer && scene && camera) {
+        controls.update();
+        renderer.render(scene, camera);
+    }
 }
 
 // --- INITIALIZATION ---
 function initApp() {
+    // Setup Modals
+    setupModal(modals.evolution.overlay, modals.evolution.openBtn, modals.evolution.closeBtn);
+    setupModal(modals.music.overlay, modals.music.openBtn, modals.music.closeBtn);
+    // Note: Element filter modal setup might be needed if re-enabled
+
     // Setup Event Listeners
     homeElements.grid.addEventListener('click', (event) => {
         const tile = event.target.closest('.creature-grid-tile');
@@ -191,22 +245,23 @@ function initApp() {
         const creatureId = tile.dataset.creatureId;
         const index = pokedexData.findIndex(c => c.id === creatureId);
         if (index !== -1) {
-            tile.classList.add('selected');
-            setTimeout(() => { tile.classList.remove('selected'); }, 1500);
             displayCreature(index);
             showView('detail');
         }
     });
-    // ... (all other event listeners)
+
+    detailElements.btnHome.addEventListener('click', () => showView('home'));
+    detailElements.btnNext.addEventListener('click', () => displayCreature((currentIndex + 1) % pokedexData.length));
+    detailElements.btnPrev.addEventListener('click', () => displayCreature((currentIndex - 1 + pokedexData.length) % pokedexData.length));
 
     // Populate UI
     populateCreatureGrid();
-    populateHomeElementGrid();
-    loadTrack(currentTrackIndex);
     
     // Initialize 3D Scene & Show Initial View
     initScene();
-    showView('home');
+    displayCreature(0); // Display the first creature by default in the detail view's memory
+    showView('home'); // But show the home view first
 }
 
 initApp();
+
