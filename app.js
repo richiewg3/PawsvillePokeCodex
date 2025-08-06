@@ -44,6 +44,7 @@ const elementAssetMap = {
 // --- STATE MANAGEMENT ---
 let currentIndex = 0;
 let currentModel = null;
+let isSceneInitialized = false;
 
 // --- DOM ELEMENT REFERENCES (Refactored) ---
 const getEl = (id) => document.getElementById(id);
@@ -86,8 +87,17 @@ const loader = new GLTFLoader();
 
 // --- CORE FUNCTIONS ---
 function showView(viewName) {
-    view.home.classList.toggle('hidden', viewName !== 'home');
-    view.detail.classList.toggle('hidden', viewName !== 'detail');
+    if (viewName === 'detail') {
+        if (!isSceneInitialized) {
+            initScene();
+            isSceneInitialized = true;
+        }
+        view.home.classList.add('hidden');
+        view.detail.classList.remove('hidden');
+    } else {
+        view.detail.classList.add('hidden');
+        view.home.classList.remove('hidden');
+    }
 }
 
 function populateCreatureGrid(data = pokedexData) {
@@ -257,10 +267,8 @@ function initApp() {
     // Populate UI
     populateCreatureGrid();
     
-    // Initialize 3D Scene & Show Initial View
-    initScene();
-    displayCreature(0); // Display the first creature by default in the detail view's memory
-    showView('home'); // But show the home view first
+    // Show Initial View
+    showView('home');
 }
 
 initApp();
