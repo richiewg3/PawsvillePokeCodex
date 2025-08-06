@@ -101,24 +101,6 @@ function filterCreatureGrid(element) {
     clearFilterContainer.classList.remove('hidden');
 }
 
-clearFilterBtn.addEventListener('click', () => {
-    populateCreatureGrid();
-    clearFilterContainer.classList.add('hidden');
-});
-
-homeBtnHome.addEventListener('click', () => {
-    populateCreatureGrid();
-    clearFilterContainer.classList.add('hidden');
-    creatureGrid.scrollTo({ top: 0, behavior: 'smooth' });
-});
-
-homeBtnUp.addEventListener('click', () => {
-    creatureGrid.scrollBy({ top: -100, behavior: 'smooth' });
-});
-
-homeBtnDown.addEventListener('click', () => {
-    creatureGrid.scrollBy({ top: 100, behavior: 'smooth' });
-});
 
 // --- Detail View Logic ---
 function displayCreature(index) {
@@ -154,18 +136,6 @@ function renderRarity(rarity) {
     }
 }
 
-btnNext.addEventListener('click', () => displayCreature((currentIndex + 1) % pokedexData.length));
-btnPrev.addEventListener('click', () => displayCreature((currentIndex - 1 + pokedexData.length) % pokedexData.length));
-btnRandom.addEventListener('click', () => {
-    let newIndex;
-    do {
-        newIndex = Math.floor(Math.random() * pokedexData.length);
-    } while (pokedexData.length > 1 && newIndex === currentIndex);
-    displayCreature(newIndex);
-});
-detailBtnHome.addEventListener('click', () => {
-    showView('home');
-});
 
 // --- Modals ---
 function setupModal(modal, openBtns, closeBtn, onOpen, onClose) {
@@ -185,9 +155,6 @@ function setupModal(modal, openBtns, closeBtn, onOpen, onClose) {
     return close;
 }
 
-setupModal(evolutionModal, openModalBtn, closeEvolutionModalBtn);
-const closeElementFilterModal = setupModal(elementFilterModal, [homeBtnElement, btnElementFilter], closeElementFilterModalBtn);
-setupModal(musicModal, homeBtnMusic, closeMusicModalBtn, () => musicAudio.play(), () => musicAudio.pause());
 
 function populateEvolutionModal(evolutions) {
     evolutionChoicesEl.innerHTML = '';
@@ -209,7 +176,7 @@ function populateElementGrid() {
         img.className = 'interactive-icon w-full h-auto';
         img.addEventListener('click', () => {
             filterCreatureGrid(type);
-            closeElementFilterModal();
+            closeElementFilterModalBtn.click();
             showView('home');
         });
         elementGridEl.appendChild(img);
@@ -271,16 +238,68 @@ async function initApp() {
     try {
         const response = await fetch('data.json');
         pokedexData = await response.json();
+
+        // --- ALL SETUP LOGIC NOW MOVED HERE ---
+
+        // 1. Initialize the 3D scene
+        initScene();
+
+        // 2. Set up all modals
+        setupModal(evolutionModal, openModalBtn, closeEvolutionModalBtn);
+        const closeElementFilterModal = setupModal(elementFilterModal, [homeBtnElement, btnElementFilter], closeElementFilterModalBtn);
+        setupModal(musicModal, homeBtnMusic, closeMusicModalBtn, () => musicAudio.play(), () => musicAudio.pause());
+        
+        // 3. Populate grids and lists
+        populateElementGrid();
+        populateCreatureGrid();
+        
+        // 4. Set up event listeners that depend on data
+        clearFilterBtn.addEventListener('click', () => {
+            populateCreatureGrid();
+            clearFilterContainer.classList.add('hidden');
+        });
+
+        homeBtnHome.addEventListener('click', () => {
+            populateCreatureGrid();
+            clearFilterContainer.classList.add('hidden');
+            creatureGrid.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        homeBtnUp.addEventListener('click', () => {
+            if (creatureGrid.firstElementChild) {
+                creatureGrid.scrollBy({ top: -100, behavior: 'smooth' });
+            }
+        });
+
+        homeBtnDown.addEventListener('click', () => {
+             if (creatureGrid.firstElementChild) {
+                creatureGrid.scrollBy({ top: 100, behavior: 'smooth' });
+            }
+        });
+
+        btnNext.addEventListener('click', () => displayCreature((currentIndex + 1) % pokedexData.length));
+        btnPrev.addEventListener('click', () => displayCreature((currentIndex - 1 + pokedexData.length) % pokedexData.length));
+        btnRandom.addEventListener('click', () => {
+            let newIndex;
+            do {
+                newIndex = Math.floor(Math.random() * pokedexData.length);
+            } while (pokedexData.length > 1 && newIndex === currentIndex);
+            displayCreature(newIndex);
+        });
+        detailBtnHome.addEventListener('click', () => {
+            showView('home');
+        });
+
+        // 5. Display the initial creature and view
+        displayCreature(currentIndex);
+        showView('home');
+
     } catch (error) {
         console.error("Could not load Pokedex data:", error);
+        // Optionally, display an error message to the user on the page
+        document.body.innerHTML = `<div class="text-white text-center p-8">Failed to load Pokedex data. Please check the console for errors.</div>`;
         return;
     }
-
-    initScene();
-    populateElementGrid();
-    populateCreatureGrid();
-    displayCreature(currentIndex);
-    showView('home');
 }
 
 initApp();
