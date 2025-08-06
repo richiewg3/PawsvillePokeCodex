@@ -20,7 +20,7 @@
   {
     "id": "#002",
     "name": "Glowtail",
-    "tileImg": "https://placehold.co/200x200/333/fff?text=Glowtail",
+    "tileImg": "https://placehold.co/200x200/1a1a3a/e0fbfc?text=Glowtail",
     "species": "Neon Forest Soutrel",
     "rarity": 3,
     "element": "Neon",

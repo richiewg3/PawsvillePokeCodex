@@ -47,7 +47,7 @@ const creatureNameEl = getEl('creature-name'),
     btnNext = getEl('btn-next'),
     btnPrev = getEl('btn-prev'),
     btnRandom = getEl('btn-random'),
-    btnHome = getEl('btn-home'),
+    detailBtnHome = getEl('detail-btn-home'),
     btnElementFilter = getEl('btn-element-filter'),
     openModalBtn = getEl('open-evolution-modal-btn');
 
@@ -163,7 +163,7 @@ btnRandom.addEventListener('click', () => {
     } while (pokedexData.length > 1 && newIndex === currentIndex);
     displayCreature(newIndex);
 });
-btnHome.addEventListener('click', () => {
+detailBtnHome.addEventListener('click', () => {
     showView('home');
 });
 
