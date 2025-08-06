@@ -10,59 +10,82 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="p-4 flex items-center justify-center">
-    <div class="w-full max-w-sm lg:max-w-4xl mx-auto">
-        <div class="glass-panel p-4 lg:p-6">
-            <!-- Header Buttons - Now using IMG tags directly -->
-            <div class="flex justify-between items-center mb-4 px-2">
-                <img id="btn-prev" class="interactive-icon h-10" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/left.png" alt="Previous">
-                <div class="flex space-x-4 items-center">
-                    <img id="btn-random" class="interactive-icon h-10" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/random.png" alt="Random">
-                    <img id="btn-home" class="interactive-icon h-12" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/home.png" alt="Home">
-                    <img id="btn-element-filter" class="interactive-icon h-10" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/Element.png" alt="Filter by Element">
+    <!-- Main App Container -->
+    <div class="w-full h-full max-w-sm lg:max-w-4xl mx-auto">
+
+        <!-- View: Home Screen -->
+        <div id="home-view" class="h-full hidden">
+            <div class="glass-panel p-4 lg:p-6 flex flex-col h-full">
+                <h1 class="text-4xl font-bold text-center tracking-widest my-4">POKÉDEX</h1>
+                <div id="clear-filter-container" class="text-center my-2 hidden">
+                    <button id="clear-filter-btn" class="interactive-button rounded-full px-4 py-2 text-sm">Show All</button>
                 </div>
-                <img id="btn-next" class="interactive-icon h-10" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/right.png" alt="Next">
+                <div id="creature-grid" class="grid grid-cols-3 gap-4 flex-grow scrollable-content pr-2"></div>
+                <div class="flex justify-around items-center mt-4 pt-4 border-t-2 border-[var(--glow-color-1)]">
+                    <img id="home-btn-home" class="interactive-icon h-12" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/home.png" alt="Home">
+                    <img id="home-btn-up" class="interactive-icon h-12" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/up.png" alt="Up">
+                    <img id="home-btn-music" class="interactive-icon h-12" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/Music.png" alt="Music">
+                    <img id="home-btn-down" class="interactive-icon h-12" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/down.png" alt="Down">
+                    <img id="home-btn-element" class="interactive-icon h-12" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/Element.png" alt="Filter by Element">
+                </div>
             </div>
+        </div>
 
-            <!-- Main Content Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 lg:gap-8">
-                <!-- Left Column -->
-                <div class="flex flex-col items-center space-y-4">
-                    <div id="model-viewer-container"></div>
-                    <button id="open-evolution-modal-btn" class="interactive-button evolution-button w-full py-3 text-lg tracking-wider">Select Evolution</button>
+        <!-- View: Detail Page -->
+        <div id="detail-view" class="hidden">
+            <div class="glass-panel p-4 lg:p-6">
+                <!-- Header Buttons - Now using IMG tags directly -->
+                <div class="flex justify-between items-center mb-4 px-2">
+                    <img id="btn-prev" class="interactive-icon h-10" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/left.png" alt="Previous">
+                    <div class="flex space-x-4 items-center">
+                        <img id="btn-random" class="interactive-icon h-10" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/random.png" alt="Random">
+                        <img id="btn-home" class="interactive-icon h-12" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/home.png" alt="Home">
+                        <img id="btn-element-filter" class="interactive-icon h-10" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/Element.png" alt="Filter by Element">
+                    </div>
+                    <img id="btn-next" class="interactive-icon h-10" src="https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/Navigation_icons/right.png" alt="Next">
                 </div>
 
-                <!-- Right Column -->
-                <div class="space-y-4 mt-4 lg:mt-0">
-                    <div>
-                        <h1 id="creature-name" class="text-3xl font-bold tracking-wider"></h1>
-                        <p id="creature-species" class="text-purple-300 text-sm"></p>
+                <!-- Main Content Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 lg:gap-8">
+                    <!-- Left Column -->
+                    <div class="flex flex-col items-center space-y-4">
+                        <div id="model-viewer-container"></div>
+                        <button id="open-evolution-modal-btn" class="interactive-button evolution-button w-full py-3 text-lg tracking-wider">Select Evolution</button>
                     </div>
-                    <div>
-                        <h2 class="text-lg font-semibold">Rarity:</h2>
-                        <div id="rarity-stars" class="flex items-center"></div>
-                    </div>
-                    <div>
-                        <h2 class="text-lg font-semibold mb-1">Element:</h2>
-                        <img id="element-img" alt="Element" class="h-12"/>
-                    </div>
-                    <div>
-                        <h2 class="text-lg font-semibold">Habitat:</h2>
-                        <p id="habitat-text" class="text-sm text-gray-300"></p>
-                    </div>
-                    <div>
-                        <h2 class="text-lg font-semibold">Dex Entry:</h2>
-                        <div id="dex-entry" class="scrollable-text text-xs text-gray-300 leading-relaxed pr-2"></div>
-                    </div>
-                    
-                    <div class="space-y-3 pt-4">
-                        <div class="grid grid-cols-2 gap-3">
-                            <img id="gallery-img-1" class="w-full h-auto object-cover rounded-lg border-2 border-purple-600/50" />
-                            <img id="gallery-img-2" class="w-full h-auto object-cover rounded-lg border-2 border-purple-600/50" />
+
+                    <!-- Right Column -->
+                    <div class="space-y-4 mt-4 lg:mt-0">
+                        <div>
+                            <h1 id="creature-name" class="text-3xl font-bold tracking-wider"></h1>
+                            <p id="creature-species" class="text-purple-300 text-sm"></p>
                         </div>
                         <div>
-                             <video id="gallery-video" class="w-full h-auto rounded-lg" autoplay loop muted playsinline>
-                                <source id="gallery-video-src" type="video/mp4">
-                            </video>
+                            <h2 class="text-lg font-semibold">Rarity:</h2>
+                            <div id="rarity-stars" class="flex items-center"></div>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-semibold mb-1">Element:</h2>
+                            <img id="element-img" alt="Element" class="h-12"/>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-semibold">Habitat:</h2>
+                            <p id="habitat-text" class="text-sm text-gray-300"></p>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-semibold">Dex Entry:</h2>
+                            <div id="dex-entry" class="scrollable-text text-xs text-gray-300 leading-relaxed pr-2"></div>
+                        </div>
+
+                        <div class="space-y-3 pt-4">
+                            <div class="grid grid-cols-2 gap-3">
+                                <img id="gallery-img-1" class="w-full h-auto object-cover rounded-lg border-2 border-purple-600/50"/>
+                                <img id="gallery-img-2" class="w-full h-auto object-cover rounded-lg border-2 border-purple-600/50"/>
+                            </div>
+                            <div>
+                                 <video id="gallery-video" class="w-full h-auto rounded-lg" autoplay loop muted playsinline>
+                                    <source id="gallery-video-src" type="video/mp4">
+                                </video>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -83,19 +106,23 @@
     <div id="element-filter-modal-overlay" class="modal-overlay hidden">
         <div class="glass-panel p-6 rounded-2xl w-full max-w-lg relative">
              <button id="close-element-filter-modal-btn" class="absolute top-3 right-3 interactive-button rounded-full flex items-center justify-center" style="width: 32px; height: 32px;"><span class="material-icons text-xl">close</span></button>
-             <div id="element-view-select">
-                <h2 class="text-2xl text-center font-bold mb-4">Filter by Element</h2>
-                <div id="element-grid" class="grid grid-cols-3 gap-4 p-4"></div>
-             </div>
-             <div id="element-view-results" class="hidden">
-                <div class="flex items-center mb-4">
-                    <button id="element-back-btn" class="interactive-button rounded-full flex items-center justify-center mr-4" style="width: 32px; height: 32px;"><span class="material-icons text-xl">arrow_back</span></button>
-                    <h2 id="element-results-title" class="text-2xl text-center font-bold"></h2>
-                </div>
-                <div id="element-results-list" class="flex flex-col space-y-2 modal-scroll-content"></div>
-             </div>
+             <h2 class="text-2xl text-center font-bold mb-4">Filter by Element</h2>
+             <div id="element-grid" class="grid grid-cols-3 gap-4 p-4"></div>
         </div>
     </div>
+
+    <!-- Music Modal -->
+    <div id="music-modal-overlay" class="modal-overlay hidden">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-xs relative">
+            <button id="close-music-modal-btn" class="absolute top-3 right-3 interactive-button rounded-full flex items-center justify-center" style="width: 32px; height: 32px;"><span class="material-icons text-xl">close</span></button>
+            <h2 class="text-2xl text-center font-bold mb-4">Music Player</h2>
+            <audio id="music-audio" class="w-full" controls loop>
+                <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3" type="audio/mpeg">
+            </audio>
+        </div>
+    </div>
+
     <script type="module" src="app.js"></script>
 </body>
 </html>
+

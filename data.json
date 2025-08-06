@@ -2,6 +2,7 @@
   {
     "id": "#001",
     "name": "BudBlop",
+    "tileImg": "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/main/BudBlop0.png",
     "species": "Sprout Toad",
     "rarity": 1,
     "element": "Nature",
@@ -19,6 +20,7 @@
   {
     "id": "#002",
     "name": "Glowtail",
+    "tileImg": "https://placehold.co/200x200/333/fff?text=Glowtail",
     "species": "Neon Forest Soutrel",
     "rarity": 3,
     "element": "Neon",
