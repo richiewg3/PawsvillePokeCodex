@@ -2,7 +2,6 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.m
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/loaders/GLTFLoader.js';
 
-// --- DATA ---
 const elementAssetMap = {
     Nature: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/2.png",
     Aqua: "https://raw.githubusercontent.com/richiewg3/3DPawsVdeX_Modelz/dffcc6acf1a5635ab10b4de1daec39559627da24/3.png",
@@ -18,8 +17,23 @@ const elementAssetMap = {
 let pokedexData = [];
 let currentIndex = 0;
 
-// --- DOM Elements ---
 const getEl = (id) => document.getElementById(id);
+
+// Views
+const homeView = getEl('home-view');
+const detailView = getEl('detail-view');
+
+// Home view elements
+const creatureGrid = getEl('creature-grid');
+const clearFilterContainer = getEl('clear-filter-container');
+const clearFilterBtn = getEl('clear-filter-btn');
+const homeBtnHome = getEl('home-btn-home');
+const homeBtnUp = getEl('home-btn-up');
+const homeBtnDown = getEl('home-btn-down');
+const homeBtnMusic = getEl('home-btn-music');
+const homeBtnElement = getEl('home-btn-element');
+
+// Detail view elements
 const creatureNameEl = getEl('creature-name'),
     creatureSpeciesEl = getEl('creature-species'),
     rarityStarsEl = getEl('rarity-stars'),
@@ -35,20 +49,78 @@ const creatureNameEl = getEl('creature-name'),
     btnRandom = getEl('btn-random'),
     btnHome = getEl('btn-home'),
     btnElementFilter = getEl('btn-element-filter'),
-    openModalBtn = getEl('open-evolution-modal-btn'),
-    evolutionModal = getEl('evolution-modal-overlay'),
+    openModalBtn = getEl('open-evolution-modal-btn');
+
+// Modals
+const evolutionModal = getEl('evolution-modal-overlay'),
     closeEvolutionModalBtn = getEl('close-evolution-modal-btn'),
     evolutionChoicesEl = getEl('evolution-choices'),
     elementFilterModal = getEl('element-filter-modal-overlay'),
     closeElementFilterModalBtn = getEl('close-element-filter-modal-btn'),
     elementGridEl = getEl('element-grid'),
-    elementResultsListEl = getEl('element-results-list'),
-    elementViewSelect = getEl('element-view-select'),
-    elementViewResults = getEl('element-view-results'),
-    elementResultsTitle = getEl('element-results-title'),
-    elementBackBtn = getEl('element-back-btn');
+    musicModal = getEl('music-modal-overlay'),
+    closeMusicModalBtn = getEl('close-music-modal-btn'),
+    musicAudio = getEl('music-audio');
 
-// --- Display Logic ---
+// --- View Helpers ---
+function showView(view) {
+    if (view === 'home') {
+        homeView.classList.remove('hidden');
+        detailView.classList.add('hidden');
+    } else {
+        detailView.classList.remove('hidden');
+        homeView.classList.add('hidden');
+    }
+}
+
+function populateCreatureGrid(data = pokedexData) {
+    creatureGrid.innerHTML = '';
+    data.forEach(creature => {
+        const tile = document.createElement('div');
+        tile.className = 'creature-tile flex flex-col items-center';
+        const img = document.createElement('img');
+        img.src = creature.tileImg;
+        img.alt = creature.name;
+        tile.appendChild(img);
+        const label = document.createElement('p');
+        label.className = 'text-xs text-center mt-1';
+        label.textContent = creature.name;
+        tile.appendChild(label);
+        tile.addEventListener('click', () => {
+            const index = pokedexData.findIndex(c => c.id === creature.id);
+            displayCreature(index);
+            showView('detail');
+        });
+        creatureGrid.appendChild(tile);
+    });
+}
+
+function filterCreatureGrid(element) {
+    const filtered = pokedexData.filter(c => c.element === element);
+    populateCreatureGrid(filtered);
+    clearFilterContainer.classList.remove('hidden');
+}
+
+clearFilterBtn.addEventListener('click', () => {
+    populateCreatureGrid();
+    clearFilterContainer.classList.add('hidden');
+});
+
+homeBtnHome.addEventListener('click', () => {
+    populateCreatureGrid();
+    clearFilterContainer.classList.add('hidden');
+    creatureGrid.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+homeBtnUp.addEventListener('click', () => {
+    creatureGrid.scrollBy({ top: -100, behavior: 'smooth' });
+});
+
+homeBtnDown.addEventListener('click', () => {
+    creatureGrid.scrollBy({ top: 100, behavior: 'smooth' });
+});
+
+// --- Detail View Logic ---
 function displayCreature(index) {
     const creature = pokedexData[index];
     currentIndex = index;
@@ -82,28 +154,40 @@ function renderRarity(rarity) {
     }
 }
 
-// --- Navigation ---
 btnNext.addEventListener('click', () => displayCreature((currentIndex + 1) % pokedexData.length));
 btnPrev.addEventListener('click', () => displayCreature((currentIndex - 1 + pokedexData.length) % pokedexData.length));
 btnRandom.addEventListener('click', () => {
     let newIndex;
-    do { newIndex = Math.floor(Math.random() * pokedexData.length); } while (pokedexData.length > 1 && newIndex === currentIndex);
+    do {
+        newIndex = Math.floor(Math.random() * pokedexData.length);
+    } while (pokedexData.length > 1 && newIndex === currentIndex);
     displayCreature(newIndex);
 });
-btnHome.addEventListener('click', () => displayCreature(0));
+btnHome.addEventListener('click', () => {
+    showView('home');
+});
 
-// --- Modal Logic ---
-function setupModal(modal, openBtn, closeBtn) {
-    const open = () => { modal.classList.remove('hidden'); setTimeout(() => modal.classList.add('visible'), 10); };
-    const close = () => { modal.classList.remove('visible'); setTimeout(() => modal.classList.add('hidden'), 300); };
-    openBtn.addEventListener('click', open);
+// --- Modals ---
+function setupModal(modal, openBtns, closeBtn, onOpen, onClose) {
+    const open = () => {
+        modal.classList.remove('hidden');
+        setTimeout(() => modal.classList.add('visible'), 10);
+        if (onOpen) onOpen();
+    };
+    const close = () => {
+        modal.classList.remove('visible');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+        if (onClose) onClose();
+    };
+    (Array.isArray(openBtns) ? openBtns : [openBtns]).forEach(btn => btn && btn.addEventListener('click', open));
     closeBtn.addEventListener('click', close);
-    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+    modal.addEventListener('click', e => { if (e.target === modal) close(); });
     return close;
 }
 
-const closeEvolutionModal = setupModal(evolutionModal, openModalBtn, closeEvolutionModalBtn);
-const closeElementFilterModal = setupModal(elementFilterModal, btnElementFilter, closeElementFilterModalBtn);
+setupModal(evolutionModal, openModalBtn, closeEvolutionModalBtn);
+const closeElementFilterModal = setupModal(elementFilterModal, [homeBtnElement, btnElementFilter], closeElementFilterModalBtn);
+setupModal(musicModal, homeBtnMusic, closeMusicModalBtn, () => musicAudio.play(), () => musicAudio.pause());
 
 function populateEvolutionModal(evolutions) {
     evolutionChoicesEl.innerHTML = '';
@@ -111,54 +195,26 @@ function populateEvolutionModal(evolutions) {
         const btn = document.createElement('button');
         btn.textContent = evolutions[key].name;
         btn.className = 'evolution-choice-btn interactive-button w-full py-2 text-lg';
-        btn.onclick = () => { loadModel(evolutions[key].modelUrl); closeEvolutionModal(); };
+        btn.onclick = () => { loadModel(evolutions[key].modelUrl); closeEvolutionModalBtn.click(); };
         evolutionChoicesEl.appendChild(btn);
     }
 }
 
-// --- Element Filter Logic ---
 function populateElementGrid() {
     elementGridEl.innerHTML = '';
-    for (const typeName in elementAssetMap) {
+    for (const type in elementAssetMap) {
         const img = document.createElement('img');
-        img.src = elementAssetMap[typeName];
-        img.alt = typeName;
-        img.className = 'interactive-icon w-full h-auto'; // Let the grid control the size
-        img.onclick = () => showElementResults(typeName);
+        img.src = elementAssetMap[type];
+        img.alt = type;
+        img.className = 'interactive-icon w-full h-auto';
+        img.addEventListener('click', () => {
+            filterCreatureGrid(type);
+            closeElementFilterModal();
+            showView('home');
+        });
         elementGridEl.appendChild(img);
     }
 }
-
-function showElementResults(typeName) {
-    elementResultsTitle.textContent = `${typeName} Creatures`;
-    elementResultsListEl.innerHTML = '';
-    const results = pokedexData.filter(c => c.element === typeName);
-    if (results.length > 0) {
-        results.forEach(creature => {
-            const btn = document.createElement('button');
-            btn.textContent = `${creature.id} - ${creature.name}`;
-            btn.className = 'creature-list-item interactive-button w-full py-2 text-md text-left px-4';
-            btn.onclick = () => {
-                const creatureIndex = pokedexData.findIndex(c => c.id === creature.id);
-                displayCreature(creatureIndex);
-                closeElementFilterModal();
-            };
-            elementResultsListEl.appendChild(btn);
-        });
-    } else {
-        const noResults = document.createElement('p');
-        noResults.textContent = 'No creatures found for this element.';
-        noResults.className = 'text-center';
-        elementResultsListEl.appendChild(noResults);
-    }
-    elementViewSelect.classList.add('hidden');
-    elementViewResults.classList.remove('hidden');
-}
-
-elementBackBtn.addEventListener('click', () => {
-    elementViewResults.classList.add('hidden');
-    elementViewSelect.classList.remove('hidden');
-});
 
 // --- Three.js Scene ---
 let scene, camera, renderer, controls, currentModel = null;
@@ -210,20 +266,22 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-// --- Initial Load ---
+// --- Initialization ---
 async function initApp() {
-    // Fetch data from the JSON file
     try {
         const response = await fetch('data.json');
         pokedexData = await response.json();
     } catch (error) {
         console.error("Could not load Pokedex data:", error);
-        return; // Stop the app if data fails to load
+        return;
     }
 
     initScene();
     populateElementGrid();
+    populateCreatureGrid();
     displayCreature(currentIndex);
+    showView('home');
 }
 
 initApp();
+
